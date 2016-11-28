@@ -13,6 +13,10 @@ import Footer from './components/Footer/Footer';
 // Import Actions
 import { toggleAddPost } from './AppActions';
 import { switchLanguage } from '../../modules/Intl/IntlActions';
+import { loadUserProps, logout } from '../../modules/User/UserActions';
+
+// Import cookie
+import cookie from 'react-cookie';
 
 export class App extends Component {
   constructor(props) {
@@ -23,6 +27,19 @@ export class App extends Component {
   componentDidMount() {
     this.setState({isMounted: true}); // eslint-disable-line
   }
+
+  componentWillMount() {
+    const loginResult = cookie.load('mernAuth');
+    const token = loginResult ? loginResult.t : null;
+    const username = loginResult ? loginResult.u : null;
+    if(this.props.user == null && token && username) {
+      this.props.dispatch(loadUserProps( {username: username} ));
+    } 
+  }
+    
+  handleLogout = () => {
+    this.props.dispatch(logout());
+  };
 
   toggleAddPostSection = () => {
     this.props.dispatch(toggleAddPost());
@@ -52,6 +69,8 @@ export class App extends Component {
             switchLanguage={lang => this.props.dispatch(switchLanguage(lang))}
             intl={this.props.intl}
             toggleAddPost={this.toggleAddPostSection}
+            logout={this.handleLogout}
+            user={this.props.user}
           />
           <div className={styles.container}>
             {this.props.children}
@@ -67,12 +86,16 @@ App.propTypes = {
   children: PropTypes.object.isRequired,
   dispatch: PropTypes.func.isRequired,
   intl: PropTypes.object.isRequired,
+  user: PropTypes.shape({
+    username: PropTypes.string.isRequired,
+  }),
 };
 
 // Retrieve data from store as props
 function mapStateToProps(store) {
   return {
     intl: store.intl,
+    user: store.user.data,
   };
 }
 

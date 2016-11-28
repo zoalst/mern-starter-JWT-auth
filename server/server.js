@@ -29,10 +29,14 @@ import { renderToString } from 'react-dom/server';
 import { match, RouterContext } from 'react-router';
 import Helmet from 'react-helmet';
 
+// cookie for JWT token
+import cookie from 'react-cookie';
+import cookieParser from 'cookie-parser';
+
 // Import required modules
 import routes from '../client/routes';
 import { fetchComponentData } from './util/fetchData';
-import posts from './routes/post.routes';
+import api from './routes/api.routes';
 import dummyData from './dummyData';
 import serverConfig from './config';
 
@@ -54,8 +58,9 @@ mongoose.connect(serverConfig.mongoURL, (error) => {
 app.use(compression());
 app.use(bodyParser.json({ limit: '20mb' }));
 app.use(bodyParser.urlencoded({ limit: '20mb', extended: false }));
+app.use(cookieParser());
 app.use(Express.static(path.resolve(__dirname, '../dist')));
-app.use('/api', posts);
+app.use('/api', api);
 
 // Render Initial HTML
 const renderFullPage = (html, initialState) => {
@@ -104,6 +109,7 @@ const renderError = err => {
 
 // Server Side Rendering based on routes matched by React-router.
 app.use((req, res, next) => {
+  cookie.plugToRequest(req, res);
   match({ routes, location: req.url }, (err, redirectLocation, renderProps) => {
     if (err) {
       return res.status(500).end(renderError(err));
